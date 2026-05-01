@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Level 4 — Log Analysis | MegaCTF</title>
+  <link rel="stylesheet" href="/static/css/style.css"/>
+</head>
+<body>
+<div class="scanline"></div>
+
+<nav>
+  <a href="/">⌂ HOME</a>
+  <a href="/level/1" {% if 1 in solved %}class="solved-nav"{% endif %}>L1</a>
+  <a href="/level/2" {% if 2 in solved %}class="solved-nav"{% endif %}>L2</a>
+  <a href="/level/3" {% if 3 in solved %}class="solved-nav"{% endif %}>L3</a>
+  <a href="/level/4" class="active">L4</a>
+  <a href="/level/5" {% if 5 in solved %}class="solved-nav"{% endif %}>L5</a>
+</nav>
+
+<div style="margin-bottom:20px">
+  <div style="font-size:0.72rem;color:#00ff8855;letter-spacing:3px">// LEVEL 04 OF 05 //</div>
+  <h2 style="font-family:Orbitron,sans-serif;font-size:1.5rem;letter-spacing:2px">
+    LOG ANALYSIS
+    {% if 4 in solved %}<span class="badge badge-solved" style="font-size:0.65rem;vertical-align:middle">✓ SOLVED</span>{% endif %}
+  </h2>
+</div>
+
+<div class="grid-2">
+
+  <!-- THEORY -->
+  <div>
+    <div class="panel">
+      <div class="panel-title">▶ THEORY</div>
+      <div class="theory">
+        <h3>Why Log Analysis Matters</h3>
+        <p>Server logs record every action — logins, file access, errors, attacks. A SOC analyst reads logs to detect intrusions, find attacker IPs, and understand attack timelines.</p>
+
+        <h3>Common Log Types</h3>
+        <p><code>Access logs</code> — HTTP requests to the server<br>
+        <code>Auth logs</code> — login success/failure events<br>
+        <code>Error logs</code> — application errors<br>
+        <code>System logs</code> — OS-level events</p>
+
+        <h3>What to look for</h3>
+        <p><code>Multiple failed logins</code> → Brute force<br>
+        <code>Unusual file access</code> → Data theft<br>
+        <code>Suspicious uploads</code> → Web shell<br>
+        <code>Admin access after failures</code> → Compromise</p>
+
+        <h3>Linux commands for log analysis</h3>
+        <pre>grep "FAIL" /var/log/auth.log
+grep "10.0.0.5" access.log
+awk '{print $1}' access.log | sort | uniq -c | sort -rn
+cat app.log | grep -i "flag"</pre>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">▶ QUESTIONS — Read the logs carefully!</div>
+
+      <div class="question-block">
+        <div class="question-text">Q1. What is the attacker's IP address?</div>
+        <input type="text" id="l4q1" placeholder="x.x.x.x"/>
+        <button class="btn" onclick="submitLog('q1','l4q1','r4q1')">CHECK</button>
+        <div class="question-result" id="r4q1"></div>
+      </div>
+
+      <div class="question-block">
+        <div class="question-text">Q2. How many failed login attempts were made before success?</div>
+        <input type="text" id="l4q2" placeholder="Number..."/>
+        <button class="btn" onclick="submitLog('q2','l4q2','r4q2')">CHECK</button>
+        <div class="question-result" id="r4q2"></div>
+      </div>
+
+      <div class="question-block">
+        <div class="question-text">Q3. What malicious file did the attacker try to upload?</div>
+        <input type="text" id="l4q3" placeholder="filename.ext"/>
+        <button class="btn" onclick="submitLog('q3','l4q3','r4q3')">CHECK</button>
+        <div class="question-result" id="r4q3"></div>
+      </div>
+
+      <div class="question-block">
+        <div class="question-text">Q4. What is the FLAG hidden in the logs?</div>
+        <input type="text" id="l4q4" placeholder="FLAG{...}"/>
+        <button class="btn" onclick="submitLog('q4','l4q4','r4q4')">CHECK</button>
+        <div class="question-result" id="r4q4"></div>
+        <div class="flag-box" id="flag4"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOGS -->
+  <div>
+    <div class="panel">
+      <div class="panel-title">▶ SERVER LOGS — Analyze carefully</div>
+      <div class="log-viewer" id="log-viewer">{% for line in logs.split('\n') %}{% if 'WARN' in line or 'FAIL' in line %}<span class="log-warn">{{ line }}</span>
+{% elif 'ERROR' in line or 'Suspicious' in line or 'shell' in line %}<span class="log-error">{{ line }}</span>
+{% elif 'SUCCESS' in line or 'FLAG' in line %}<span class="log-success">{{ line }}</span>
+{% else %}<span class="log-info">{{ line }}</span>
+{% endif %}{% endfor %}</div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">▶ LOG SEARCH</div>
+      <input type="text" id="search-term" placeholder="Search logs (e.g. WARN, admin, 10.0.0.5)..."/>
+      <button class="btn btn-full" onclick="searchLog()">[ SEARCH ]</button>
+      <div id="search-results" style="margin-top:10px;font-size:0.78rem;max-height:180px;overflow-y:auto;display:none"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">▶ TOOLS HINT</div>
+      <div class="theory">
+        <pre>grep "WARN" logs.txt
+grep "10\." logs.txt
+grep -i "flag" logs.txt</pre>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const rawLogs = `{{ logs }}`;
+
+async function submitLog(q, inputId, resultId) {
+  const ans = document.getElementById(inputId).value.trim();
+  const r = await fetch('/log/answer',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({question:q,answer:ans})
+  });
+  const d = await r.json();
+  const el = document.getElementById(resultId);
+  el.textContent = d.correct ? '✓ Correct!' : '✗ Wrong — try again.';
+  el.style.color = d.correct ? 'var(--green)' : 'var(--red)';
+  el.style.display = 'block';
+  if(d.flag){
+    const fb = document.getElementById('flag4');
+    fb.textContent='🚩 '+d.flag; fb.style.display='block';
+  }
+}
+
+function searchLog() {
+  const term = document.getElementById('search-term').value.trim().toLowerCase();
+  const results = document.getElementById('search-results');
+  if(!term){results.style.display='none';return;}
+  const lines = rawLogs.split('\n').filter(l=>l.toLowerCase().includes(term));
+  if(!lines.length){
+    results.innerHTML='<span style="color:#ff4444">No matches found.</span>';
+  } else {
+    results.innerHTML = lines.map(l=>`<div style="color:var(--yellow);margin-bottom:4px">${l}</div>`).join('');
+  }
+  results.style.display='block';
+}
+</script>
+</body>
+</html>

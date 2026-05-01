@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Level 3 — JWT | MegaCTF</title>
+  <link rel="stylesheet" href="/static/css/style.css"/>
+</head>
+<body>
+<div class="scanline"></div>
+
+<nav>
+  <a href="/">⌂ HOME</a>
+  <a href="/level/1" {% if 1 in solved %}class="solved-nav"{% endif %}>L1</a>
+  <a href="/level/2" {% if 2 in solved %}class="solved-nav"{% endif %}>L2</a>
+  <a href="/level/3" class="active">L3</a>
+  <a href="/level/4" {% if 4 in solved %}class="solved-nav"{% endif %}>L4</a>
+  <a href="/level/5" {% if 5 in solved %}class="solved-nav"{% endif %}>L5</a>
+</nav>
+
+<div style="margin-bottom:20px">
+  <div style="font-size:0.72rem;color:#00ff8855;letter-spacing:3px">// LEVEL 03 OF 05 //</div>
+  <h2 style="font-family:Orbitron,sans-serif;font-size:1.5rem;letter-spacing:2px">
+    JWT TOKEN EXPLOITATION
+    {% if 3 in solved %}<span class="badge badge-solved" style="font-size:0.65rem;vertical-align:middle">✓ SOLVED</span>{% endif %}
+  </h2>
+</div>
+
+<div class="grid-2">
+
+  <!-- THEORY -->
+  <div>
+    <div class="panel">
+      <div class="panel-title">▶ THEORY</div>
+      <div class="theory">
+        <h3>What is JWT?</h3>
+        <p>JSON Web Token (JWT) is used for authentication. It has 3 parts separated by dots:</p>
+        <pre>header.payload.signature</pre>
+
+        <h3>Structure</h3>
+        <p><code>Header</code> — algorithm type (HS256, RS256, none)<br>
+        <code>Payload</code> — user data (user, role, exp)<br>
+        <code>Signature</code> — verifies token integrity</p>
+
+        <h3>alg:none Vulnerability</h3>
+        <p>Some servers accept <code>"alg":"none"</code> in the header, meaning NO signature is required. An attacker can modify the payload freely!</p>
+        <pre># Original token header (decoded):
+{"alg":"HS256","typ":"JWT"}
+
+# Forged token header:
+{"alg":"none","typ":"JWT"}
+
+# Modified payload:
+{"user":"admin","role":"admin"}</pre>
+
+        <h3>Attack Steps</h3>
+        <p>1. Decode the original token (base64)<br>
+        2. Change <code>alg</code> to <code>none</code> in header<br>
+        3. Change <code>role</code> to <code>admin</code> in payload<br>
+        4. Encode back to base64 (no signature needed)<br>
+        5. Send the forged token</p>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">▶ QUESTIONS</div>
+
+      <div class="question-block">
+        <div class="question-text">Q1. What are the 3 parts of a JWT token?</div>
+        <input type="text" id="l3q1" placeholder="Your answer..."/>
+        <button class="btn" onclick="checkQ('l3q1',['header payload signature','header.payload.signature'],'r3q1')">CHECK</button>
+        <div class="question-result" id="r3q1"></div>
+      </div>
+
+      <div class="question-block">
+        <div class="question-text">Q2. Which algorithm value makes JWT accept NO signature?</div>
+        <input type="text" id="l3q2" placeholder="Your answer..."/>
+        <button class="btn" onclick="checkQ('l3q2',['none','alg:none','alg none'],'r3q2')">CHECK</button>
+        <div class="question-result" id="r3q2"></div>
+      </div>
+
+      <div class="question-block">
+        <div class="question-text">Q3. What encoding is used for JWT parts?</div>
+        <input type="text" id="l3q3" placeholder="Your answer..."/>
+        <button class="btn" onclick="checkQ('l3q3',['base64','base64url','base64 url'],'r3q3')">CHECK</button>
+        <div class="question-result" id="r3q3"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PRACTICAL -->
+  <div>
+    <div class="panel">
+      <div class="panel-title">▶ YOUR TOKEN (as guest)</div>
+      <div style="word-break:break-all;font-size:0.75rem;color:var(--yellow);
+                  background:#111;padding:12px;border-radius:4px;margin-bottom:12px" id="orig-token">
+        {{ token }}
+      </div>
+      <button class="btn" onclick="decodeToken()">[ DECODE TOKEN ]</button>
+      <div id="decoded" style="margin-top:12px;display:none">
+        <div style="font-size:0.75rem;color:#00ff8877;margin-bottom:4px">HEADER:</div>
+        <pre id="dec-header" style="background:#111;padding:10px;border-radius:3px;font-size:0.78rem;color:var(--yellow)"></pre>
+        <div style="font-size:0.75rem;color:#00ff8877;margin-bottom:4px">PAYLOAD:</div>
+        <pre id="dec-payload" style="background:#111;padding:10px;border-radius:3px;font-size:0.78rem;color:var(--yellow)"></pre>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">▶ FORGE YOUR TOKEN</div>
+      <div style="font-size:0.8rem;color:#00ff8877;margin-bottom:10px">
+        Modify header & payload, then submit:
+      </div>
+      <div style="font-size:0.75rem;color:#00ff8855;margin-bottom:4px">HEADER (JSON):</div>
+      <textarea id="forge-header" rows="3">{"alg":"HS256","typ":"JWT"}</textarea>
+      <div style="font-size:0.75rem;color:#00ff8855;margin-bottom:4px">PAYLOAD (JSON):</div>
+      <textarea id="forge-payload" rows="3">{"user":"guest","role":"user"}</textarea>
+      <button class="btn" onclick="buildToken()" style="margin-bottom:10px">[ BUILD TOKEN ]</button>
+      <div id="forged-token" style="word-break:break-all;font-size:0.75rem;color:var(--blue);
+                                    background:#111;padding:10px;border-radius:4px;
+                                    margin-bottom:10px;display:none"></div>
+      <button class="btn btn-full" onclick="submitToken()">[ SUBMIT TOKEN ]</button>
+      <div class="res-box" id="res3"></div>
+      <div class="flag-box" id="flag3"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">▶ HINT</div>
+      <div style="font-size:0.82rem;color:#00ff8877;line-height:1.8">
+        1. Change <code style="background:#1a1a00;padding:1px 5px">"alg":"HS256"</code> →
+           <code style="background:#1a1a00;padding:1px 5px">"alg":"none"</code><br>
+        2. Change <code style="background:#1a1a00;padding:1px 5px">"role":"user"</code> →
+           <code style="background:#1a1a00;padding:1px 5px">"role":"admin"</code><br>
+        3. Build & submit — no signature needed!
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function b64url(str) {
+  return btoa(unescape(encodeURIComponent(str)))
+    .replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
+}
+function b64dec(str) {
+  str = str.replace(/-/g,'+').replace(/_/g,'/');
+  while(str.length%4) str+='=';
+  return decodeURIComponent(escape(atob(str)));
+}
+
+function decodeToken() {
+  const t = document.getElementById('orig-token').textContent.trim();
+  const parts = t.split('.');
+  if(parts.length!==3){alert('Invalid token');return;}
+  document.getElementById('dec-header').textContent =
+    JSON.stringify(JSON.parse(b64dec(parts[0])),null,2);
+  document.getElementById('dec-payload').textContent =
+    JSON.stringify(JSON.parse(b64dec(parts[1])),null,2);
+  document.getElementById('decoded').style.display='block';
+}
+
+function buildToken() {
+  try {
+    const h = JSON.parse(document.getElementById('forge-header').value);
+    const p = JSON.parse(document.getElementById('forge-payload').value);
+    const header  = b64url(JSON.stringify(h));
+    const payload = b64url(JSON.stringify(p));
+    const alg = (h.alg||'').toUpperCase();
+    const sig = alg==='NONE'?'':'SIGNATURE_REQUIRED';
+    const token = `${header}.${payload}.${sig}`;
+    const el = document.getElementById('forged-token');
+    el.textContent = token; el.style.display='block';
+  } catch(e){ alert('Invalid JSON: '+e.message); }
+}
+
+async function submitToken() {
+  const el = document.getElementById('forged-token');
+  if(!el.textContent){ alert('Build token first!'); return; }
+  const r = await fetch('/jwt/verify',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({token:el.textContent.trim()})
+  });
+  const d = await r.json();
+  if(d.flag){
+    showRes('res3','🎉 '+d.message,true);
+    const fb=document.getElementById('flag3');
+    fb.textContent='🚩 '+d.flag; fb.style.display='block';
+  } else if(d.success===false){
+    showRes('res3',d.message,false);
+  } else if(d.error){
+    showRes('res3',d.error,false);
+  } else {
+    showRes('res3',d.message||'Sent',true);
+  }
+}
+
+function showRes(id,msg,ok){
+  const b=document.getElementById(id);
+  b.textContent=msg; b.className='res-box '+(ok?'res-ok':'res-err');
+  b.style.display='block';
+}
+
+function checkQ(inputId,correct,resultId){
+  const val=document.getElementById(inputId).value.trim().toLowerCase();
+  const ok=correct.some(a=>val.includes(a.toLowerCase()));
+  const el=document.getElementById(resultId);
+  el.textContent=ok?'✓ Correct!':'✗ Try again.';
+  el.style.color=ok?'var(--green)':'var(--red)';
+  el.style.display='block';
+}
+</script>
+</body>
+</html>

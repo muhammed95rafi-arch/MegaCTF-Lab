@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>MegaCTF Lab</title>
+  <link rel="stylesheet" href="/static/css/style.css"/>
+  <style>
+    header { text-align:center; padding: 50px 20px 30px; }
+    h1 { font-family:'Orbitron',sans-serif; font-size:2.4rem;
+         text-shadow:0 0 30px #00ff8866; letter-spacing:5px; margin-bottom:8px; }
+    .sub { color:#00ff8855; font-size:0.85rem; letter-spacing:2px; }
+    .progress-text { color:#00ff8877; font-size:0.8rem; text-align:center; margin-bottom:30px; }
+
+    .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+             gap:16px; max-width:1100px; margin:0 auto; }
+
+    .card {
+      background:#0f0f0f; border:1px solid #00ff8825;
+      border-radius:8px; padding:26px;
+      text-decoration:none; color:inherit;
+      transition:all 0.3s; position:relative; overflow:hidden;
+    }
+    .card::after {
+      content:''; position:absolute; top:0; left:-100%;
+      width:100%; height:2px;
+      background:linear-gradient(90deg,transparent,#00ff88,transparent);
+      transition:left 0.5s;
+    }
+    .card:hover::after { left:100%; }
+    .card:hover { border-color:#00ff8855; box-shadow:0 0 24px #00ff8815; transform:translateY(-2px); }
+    .card.solved { border-color:#00ff8855; background:#0a150f; }
+    .card.locked { opacity:0.45; pointer-events:none; }
+
+    .lnum { font-family:'Orbitron',sans-serif; font-size:2.8rem;
+            color:#00ff8820; position:absolute; top:10px; right:18px; }
+    .card.solved .lnum { color:#00ff8855; }
+
+    .ltitle { font-family:'Orbitron',sans-serif; font-size:0.78rem;
+              letter-spacing:2px; color:var(--green); margin:10px 0 8px; }
+    .ldesc  { color:#00ff8866; font-size:0.8rem; line-height:1.6; }
+    .go-btn {
+      display:inline-block; margin-top:18px; padding:7px 18px;
+      border:1px solid var(--green); color:var(--green);
+      font-family:'Share Tech Mono',monospace; font-size:0.78rem;
+      transition:all 0.2s;
+    }
+    .card:hover .go-btn { background:var(--green); color:#000; }
+    .reset-link { display:block; text-align:center; margin-top:30px;
+                  color:#ff444455; font-size:0.78rem; text-decoration:none; }
+    .reset-link:hover { color:#ff4444; }
+  </style>
+</head>
+<body>
+<div class="scanline"></div>
+
+<header>
+  <h1>MEGA CTF LAB</h1>
+  <p class="sub">// Practical Web Security Training //</p>
+  <br>
+  <div style="max-width:320px;margin:0 auto">
+    <div class="progress-wrap">
+      <div class="progress-fill" style="width:{{ (solved|length/total*100)|int }}%"></div>
+    </div>
+  </div>
+  <p class="progress-text">{{ solved|length }} / {{ total }} LEVELS COMPLETE</p>
+</header>
+
+<div class="cards">
+
+  <a href="/level/1" class="card {% if 1 in solved %}solved{% endif %}">
+    <div class="lnum">01</div>
+    <span class="badge {% if 1 in solved %}badge-solved{% else %}badge-unsolved{% endif %}">
+      {% if 1 in solved %}✓ SOLVED{% else %}UNSOLVED{% endif %}</span>
+    <div class="ltitle">FILE UPLOAD VULNERABILITY</div>
+    <p class="ldesc">No server-side validation. Upload a web shell and execute remote commands.</p>
+    <div class="go-btn">ENTER LAB →</div>
+  </a>
+
+  <a href="/level/2" class="card {% if 2 in solved %}solved{% endif %}">
+    <div class="lnum">02</div>
+    <span class="badge {% if 2 in solved %}badge-solved{% else %}badge-unsolved{% endif %}">
+      {% if 2 in solved %}✓ SOLVED{% else %}UNSOLVED{% endif %}</span>
+    <div class="ltitle">BRUTE FORCE ATTACK</div>
+    <p class="ldesc">Weak credentials on admin login. Use a wordlist to brute-force your way in.</p>
+    <div class="go-btn">ENTER LAB →</div>
+  </a>
+
+  <a href="/level/3" class="card {% if 3 in solved %}solved{% endif %}">
+    <div class="lnum">03</div>
+    <span class="badge {% if 3 in solved %}badge-solved{% else %}badge-unsolved{% endif %}">
+      {% if 3 in solved %}✓ SOLVED{% else %}UNSOLVED{% endif %}</span>
+    <div class="ltitle">JWT TOKEN EXPLOITATION</div>
+    <p class="ldesc">Server accepts alg:none. Forge an admin JWT token without a secret key.</p>
+    <div class="go-btn">ENTER LAB →</div>
+  </a>
+
+  <a href="/level/4" class="card {% if 4 in solved %}solved{% endif %}">
+    <div class="lnum">04</div>
+    <span class="badge {% if 4 in solved %}badge-solved{% else %}badge-unsolved{% endif %}">
+      {% if 4 in solved %}✓ SOLVED{% else %}UNSOLVED{% endif %}</span>
+    <div class="ltitle">LOG ANALYSIS</div>
+    <p class="ldesc">Analyze server logs to find the attacker's IP, attack pattern, and hidden flag.</p>
+    <div class="go-btn">ENTER LAB →</div>
+  </a>
+
+  <a href="/level/5" class="card {% if 5 in solved %}solved{% elif solved|length < 4 %}locked{% endif %}">
+    <div class="lnum">05</div>
+    <span class="badge {% if 5 in solved %}badge-solved{% elif solved|length < 4 %}badge-locked{% else %}badge-unsolved{% endif %}">
+      {% if 5 in solved %}✓ SOLVED{% elif solved|length < 4 %}🔒 LOCKED{% else %}FINAL{% endif %}</span>
+    <div class="ltitle">CAPTURE THE FLAG</div>
+    <p class="ldesc">Final challenge. Combine all skills — find the hidden flag buried in the system.</p>
+    <div class="go-btn">{% if solved|length < 4 %}LOCKED{% else %}ENTER LAB →{% endif %}</div>
+  </a>
+
+</div>
+
+<a href="/reset" class="reset-link">[ RESET ALL PROGRESS ]</a>
+
+</body>
+</html>

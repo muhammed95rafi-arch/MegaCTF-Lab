@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Level 1 — File Upload | MegaCTF</title>
+  <link rel="stylesheet" href="/static/css/style.css"/>
+</head>
+<body>
+<div class="scanline"></div>
+
+<nav>
+  <a href="/">⌂ HOME</a>
+  <a href="/level/1" class="active">L1</a>
+  <a href="/level/2" {% if 2 in solved %}class="solved-nav"{% endif %}>L2</a>
+  <a href="/level/3" {% if 3 in solved %}class="solved-nav"{% endif %}>L3</a>
+  <a href="/level/4" {% if 4 in solved %}class="solved-nav"{% endif %}>L4</a>
+  <a href="/level/5" {% if 5 in solved %}class="solved-nav"{% endif %}>L5</a>
+</nav>
+
+<div style="margin-bottom:20px">
+  <div style="font-size:0.72rem;color:#00ff8855;letter-spacing:3px">// LEVEL 01 OF 05 //</div>
+  <h2 style="font-family:Orbitron,sans-serif;font-size:1.5rem;letter-spacing:2px">
+    FILE UPLOAD VULNERABILITY
+    {% if 1 in solved %}<span class="badge badge-solved" style="font-size:0.65rem;vertical-align:middle">✓ SOLVED</span>{% endif %}
+  </h2>
+</div>
+
+<div class="grid-2">
+
+  <!-- THEORY -->
+  <div>
+    <div class="panel">
+      <div class="panel-title">▶ THEORY</div>
+      <div class="theory">
+        <h3>What is File Upload Vulnerability?</h3>
+        <p>When a web server allows file uploads without proper validation, an attacker can upload a malicious script (web shell) and execute commands on the server.</p>
+
+        <h3>How it works</h3>
+        <p>A typical PHP web shell looks like:</p>
+        <pre>&lt;?php system($_GET['cmd']); ?&gt;</pre>
+        <p>If the server saves and executes this file, an attacker can run:</p>
+        <pre>http://target.com/uploads/shell.php?cmd=whoami
+http://target.com/uploads/shell.php?cmd=ls</pre>
+
+        <h3>Why servers are vulnerable</h3>
+        <p>Many servers only check the file extension visually or rely on user-provided Content-Type, making it easy to bypass. A proper server must validate <code>extension + MIME type + magic bytes</code>.</p>
+
+        <h3>Real-world impact</h3>
+        <p>File upload vulnerabilities can lead to <code>Remote Code Execution (RCE)</code>, full server takeover, data theft, and ransomware deployment.</p>
+      </div>
+    </div>
+
+    <!-- Q&A -->
+    <div class="panel">
+      <div class="panel-title">▶ QUESTIONS</div>
+
+      <div class="question-block">
+        <div class="question-text">Q1. What type of file should you upload to get Remote Code Execution?</div>
+        <input type="text" id="l1q1" placeholder="Your answer..."/>
+        <button class="btn" onclick="checkAnswer('l1q1','web shell','r1q1')">CHECK</button>
+        <div class="question-result" id="r1q1"></div>
+      </div>
+
+      <div class="question-block">
+        <div class="question-text">Q2. Which PHP function executes system commands in a web shell?</div>
+        <input type="text" id="l1q2" placeholder="Your answer..."/>
+        <button class="btn" onclick="checkAnswer('l1q2','system','r1q2')">CHECK</button>
+        <div class="question-result" id="r1q2"></div>
+      </div>
+
+      <div class="question-block">
+        <div class="question-text">Q3. What is the correct security fix — blacklist or whitelist?</div>
+        <input type="text" id="l1q3" placeholder="Your answer..."/>
+        <button class="btn" onclick="checkAnswer('l1q3','whitelist','r1q3')">CHECK</button>
+        <div class="question-result" id="r1q3"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PRACTICAL -->
+  <div>
+    <div class="panel">
+      <div class="panel-title">▶ PRACTICAL — UPLOAD YOUR SHELL</div>
+
+      <div class="upload-area" onclick="document.getElementById('fi').click()">
+        <div style="font-size:1.8rem;margin-bottom:8px">📁</div>
+        <label style="color:#00ff8877;font-size:0.85rem;cursor:pointer">Click to select file</label>
+        <div id="fname" style="color:var(--green);font-size:0.8rem;margin-top:6px">No file selected</div>
+        <input type="file" id="fi" onchange="document.getElementById('fname').textContent=this.files[0]?.name||'No file selected'"/>
+      </div>
+
+      <div style="background:#111;border-left:3px solid var(--yellow);padding:12px 16px;border-radius:3px;margin-bottom:14px;font-size:0.8rem;color:var(--yellow)">
+        💡 Create a file called <code style="background:#1a1a00;padding:1px 5px">shell.php</code> with content:<br>
+        <code style="background:#1a1a00;padding:1px 5px">&lt;?php system($_GET['cmd']); ?&gt;</code>
+      </div>
+
+      <button class="btn btn-full" onclick="doUpload()">[ UPLOAD FILE ]</button>
+      <div class="res-box" id="res1"></div>
+      <div class="flag-box" id="flag1"></div>
+
+      {% if files %}
+      <div style="margin-top:20px">
+        <div class="panel-title">▶ UPLOADED FILES</div>
+        {% for f in files %}
+        <div style="display:flex;justify-content:space-between;align-items:center;
+                    padding:8px 12px;border:1px solid #00ff8818;border-radius:3px;margin-bottom:6px;font-size:0.8rem">
+          <span>{{ f }}</span>
+          <a href="/uploads/level1/{{ f }}" target="_blank"
+             style="color:var(--green);text-decoration:none">[ VIEW ]</a>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">▶ HINT</div>
+      <div style="font-size:0.82rem;color:#00ff8877;line-height:1.8">
+        1. Create a PHP file locally with the system() function<br>
+        2. Upload it — this server has NO validation<br>
+        3. Access it via the uploaded files list above<br>
+        4. Add <code style="background:#1a1a00;padding:1px 5px">?cmd=whoami</code> to the URL
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+async function doUpload() {
+  const fi = document.getElementById('fi');
+  if (!fi.files[0]) { showRes('res1','Select a file first!',false); return; }
+  const fd = new FormData();
+  fd.append('file', fi.files[0]);
+  const r = await fetch('/upload/1',{method:'POST',body:fd});
+  const d = await r.json();
+  if (d.flag) {
+    showRes('res1', d.message, true);
+    const fb = document.getElementById('flag1');
+    fb.textContent = '🚩 ' + d.flag; fb.style.display='block';
+    setTimeout(()=>location.reload(),2000);
+  } else if (d.error) {
+    showRes('res1', d.error, false);
+  } else {
+    showRes('res1', d.message, true);
+    setTimeout(()=>location.reload(),1500);
+  }
+}
+
+function showRes(id, msg, ok) {
+  const b = document.getElementById(id);
+  b.textContent = msg;
+  b.className = 'res-box ' + (ok ? 'res-ok' : 'res-err');
+  b.style.display = 'block';
+}
+
+const answers = { l1q1:['web shell','webshell','php shell'],
+                  l1q2:['system','system()'],
+                  l1q3:['whitelist','allow list'] };
+
+function checkAnswer(inputId, _, resultId) {
+  const val = document.getElementById(inputId).value.trim().toLowerCase();
+  const correct = answers[inputId] || [];
+  const ok = correct.some(a => val.includes(a));
+  const el = document.getElementById(resultId);
+  el.textContent = ok ? '✓ Correct!' : '✗ Try again.';
+  el.style.color = ok ? 'var(--green)' : 'var(--red)';
+  el.style.display = 'block';
+}
+</script>
+</body>
+</html>

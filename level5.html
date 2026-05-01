@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Level 5 — Final CTF | MegaCTF</title>
+  <link rel="stylesheet" href="/static/css/style.css"/>
+  <style>
+    .clue-card {
+      background:#111; border:1px solid #00ff8822; border-radius:5px;
+      padding:16px; margin-bottom:12px; cursor:pointer;
+      transition:all 0.2s;
+    }
+    .clue-card:hover { border-color:#00ff8855; }
+    .clue-title { color:var(--yellow); font-size:0.82rem; margin-bottom:6px; }
+    .clue-content { color:#00ff8888; font-size:0.8rem; display:none; margin-top:8px; line-height:1.7; }
+    /* Hidden flag in page source */
+    /* FLAG_ENCODED: RkxBR3t5MHVfNHJfNF9yMzRsX2g0Y2szcn0= */
+  </style>
+</head>
+<body>
+<div class="scanline"></div>
+
+<nav>
+  <a href="/">⌂ HOME</a>
+  <a href="/level/1" {% if 1 in solved %}class="solved-nav"{% endif %}>L1</a>
+  <a href="/level/2" {% if 2 in solved %}class="solved-nav"{% endif %}>L2</a>
+  <a href="/level/3" {% if 3 in solved %}class="solved-nav"{% endif %}>L3</a>
+  <a href="/level/4" {% if 4 in solved %}class="solved-nav"{% endif %}>L4</a>
+  <a href="/level/5" class="active">L5</a>
+</nav>
+
+{% if not unlocked %}
+<div style="text-align:center;padding:80px 20px">
+  <div style="font-size:3rem;margin-bottom:20px">🔒</div>
+  <h2 style="font-family:Orbitron,sans-serif;color:#ffffff44;letter-spacing:3px">LOCKED</h2>
+  <p style="color:#ffffff33;margin-top:14px;font-size:0.85rem">
+    Complete all 4 levels to unlock the final challenge.
+  </p>
+  <p style="color:#ffffff22;margin-top:8px;font-size:0.8rem">
+    Progress: {{ solved|length }} / 4 levels
+  </p>
+  <a href="/" style="display:inline-block;margin-top:24px;color:var(--green);
+                      border:1px solid var(--green);padding:10px 24px;text-decoration:none;
+                      font-size:0.85rem">← GO BACK</a>
+</div>
+
+{% else %}
+
+<div style="margin-bottom:20px">
+  <div style="font-size:0.72rem;color:#00ff8855;letter-spacing:3px">// LEVEL 05 OF 05 — FINAL //</div>
+  <h2 style="font-family:Orbitron,sans-serif;font-size:1.5rem;letter-spacing:2px">
+    CAPTURE THE FLAG
+    {% if 5 in solved %}<span class="badge badge-solved" style="font-size:0.65rem;vertical-align:middle">✓ SOLVED</span>{% endif %}
+  </h2>
+</div>
+
+<div class="grid-2">
+
+  <div>
+    <div class="panel">
+      <div class="panel-title">▶ MISSION BRIEFING</div>
+      <div class="theory">
+        <p>You have compromised this system using all your skills. Now find the hidden flag to complete your mission.</p>
+        <h3>What you learned</h3>
+        <p>
+          <code>Level 1</code> — File Upload → Shell access<br>
+          <code>Level 2</code> — Brute Force → Credential access<br>
+          <code>Level 3</code> — JWT Forge → Privilege escalation<br>
+          <code>Level 4</code> — Log Read → Forensic evidence
+        </p>
+        <h3>Final Objective</h3>
+        <p>The flag is hidden somewhere in this page. A real hacker uses <code>View Page Source</code>, browser DevTools, and base64 decoding to find hidden data.</p>
+        <h3>Tools to use</h3>
+        <pre>Right-click → View Page Source
+Ctrl+U (browser)
+base64 -d (terminal)
+echo "encoded" | base64 -d</pre>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">▶ BASE64 DECODER</div>
+      <textarea id="b64input" rows="3" placeholder="Paste base64 encoded string here..."></textarea>
+      <button class="btn btn-full" onclick="decodeB64()" style="margin-bottom:10px">[ DECODE ]</button>
+      <div id="b64output" style="background:#111;padding:12px;border-radius:4px;
+                                  font-size:0.82rem;color:var(--yellow);display:none;word-break:break-all"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">▶ SUBMIT FLAG</div>
+      <input type="text" id="final-flag" placeholder="FLAG{...}"/>
+      <button class="btn btn-full" onclick="submitFlag()">[ SUBMIT ]</button>
+      <div class="res-box" id="res5"></div>
+      <div class="flag-box" id="flag5"></div>
+    </div>
+  </div>
+
+  <div>
+    <div class="panel">
+      <div class="panel-title">▶ CLUES</div>
+
+      <div class="clue-card" onclick="toggle(this)">
+        <div class="clue-title">🔍 Clue 1 — Where to look</div>
+        <div class="clue-content">Flags are often hidden in HTML comments, meta tags, or JavaScript variables. Try <code>Ctrl+U</code> to view page source.</div>
+      </div>
+
+      <div class="clue-card" onclick="toggle(this)">
+        <div class="clue-title">🔍 Clue 2 — Encoding</div>
+        <div class="clue-content">The flag is base64 encoded. Look for strings ending with <code>=</code> or <code>==</code>. Use the decoder on the left.</div>
+      </div>
+
+      <div class="clue-card" onclick="toggle(this)">
+        <div class="clue-title">🔍 Clue 3 — CSS comment</div>
+        <div class="clue-content">Developers sometimes leave secrets in CSS comments. Check the &lt;style&gt; tag in this page's source code.</div>
+      </div>
+
+      <div class="clue-card" onclick="toggle(this)">
+        <div class="clue-title">🔍 Clue 4 — The key</div>
+        <div class="clue-content">Look for a comment that says <code>FLAG_ENCODED:</code> and decode what comes after it.</div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">▶ YOUR ACHIEVEMENTS</div>
+      {% for i in range(1,6) %}
+      <div style="display:flex;align-items:center;gap:12px;padding:10px 0;
+                  border-bottom:1px solid #00ff8811;font-size:0.82rem">
+        {% if i in solved %}
+        <span style="color:var(--green)">✓</span>
+        <span style="color:var(--green)">Level {{ i }} — COMPLETED</span>
+        {% else %}
+        <span style="color:#ffffff22">○</span>
+        <span style="color:#ffffff33">Level {{ i }} — INCOMPLETE</span>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+</div>
+{% endif %}
+
+<script>
+function decodeB64() {
+  const val = document.getElementById('b64input').value.trim();
+  try {
+    const decoded = atob(val);
+    const el = document.getElementById('b64output');
+    el.textContent = decoded; el.style.display='block';
+  } catch(e) {
+    alert('Invalid base64: '+e.message);
+  }
+}
+
+async function submitFlag() {
+  const flag = document.getElementById('final-flag').value.trim();
+  const r = await fetch('/ctf/submit',{
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({flag})
+  });
+  const d = await r.json();
+  if(d.success){
+    showRes('res5','🎉 '+d.message,true);
+    const fb=document.getElementById('flag5');
+    fb.textContent='🏆 '+d.flag; fb.style.display='block';
+  } else {
+    showRes('res5',d.message,false);
+  }
+}
+
+function showRes(id,msg,ok){
+  const b=document.getElementById(id);
+  b.textContent=msg; b.className='res-box '+(ok?'res-ok':'res-err');
+  b.style.display='block';
+}
+
+function toggle(card){
+  const c=card.querySelector('.clue-content');
+  c.style.display=c.style.display==='block'?'none':'block';
+}
+</script>
+</body>
+</html>

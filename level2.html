@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Level 2 — Brute Force | MegaCTF</title>
+  <link rel="stylesheet" href="/static/css/style.css"/>
+</head>
+<body>
+<div class="scanline"></div>
+
+<nav>
+  <a href="/">⌂ HOME</a>
+  <a href="/level/1" {% if 1 in solved %}class="solved-nav"{% endif %}>L1</a>
+  <a href="/level/2" class="active">L2</a>
+  <a href="/level/3" {% if 3 in solved %}class="solved-nav"{% endif %}>L3</a>
+  <a href="/level/4" {% if 4 in solved %}class="solved-nav"{% endif %}>L4</a>
+  <a href="/level/5" {% if 5 in solved %}class="solved-nav"{% endif %}>L5</a>
+</nav>
+
+<div style="margin-bottom:20px">
+  <div style="font-size:0.72rem;color:#00ff8855;letter-spacing:3px">// LEVEL 02 OF 05 //</div>
+  <h2 style="font-family:Orbitron,sans-serif;font-size:1.5rem;letter-spacing:2px">
+    BRUTE FORCE ATTACK
+    {% if 2 in solved %}<span class="badge badge-solved" style="font-size:0.65rem;vertical-align:middle">✓ SOLVED</span>{% endif %}
+  </h2>
+</div>
+
+<div class="grid-2">
+
+  <!-- THEORY -->
+  <div>
+    <div class="panel">
+      <div class="panel-title">▶ THEORY</div>
+      <div class="theory">
+        <h3>What is Brute Force?</h3>
+        <p>A brute force attack tries many passwords systematically until the correct one is found. It exploits weak or common passwords.</p>
+
+        <h3>Types of Brute Force</h3>
+        <p><code>Pure Brute Force</code> — tries every combination (slow)<br>
+        <code>Dictionary Attack</code> — uses a wordlist of common passwords<br>
+        <code>Credential Stuffing</code> — uses leaked username:password pairs</p>
+
+        <h3>Common Tools</h3>
+        <pre>hydra -l admin -P rockyou.txt http-post-form
+burpsuite intruder → sniper mode
+wfuzz, ffuf, medusa</pre>
+
+        <h3>How to prevent</h3>
+        <p>Rate limiting, CAPTCHA, account lockout after N failed attempts, MFA, and strong password policies all prevent brute force.</p>
+
+        <h3>Wordlist location (Kali)</h3>
+        <pre>/usr/share/wordlists/rockyou.txt</pre>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">▶ QUESTIONS</div>
+
+      <div class="question-block">
+        <div class="question-text">Q1. What type of attack uses a list of common passwords?</div>
+        <input type="text" id="l2q1" placeholder="Your answer..."/>
+        <button class="btn" onclick="checkQ('l2q1',['dictionary','dictionary attack'],'r2q1')">CHECK</button>
+        <div class="question-result" id="r2q1"></div>
+      </div>
+
+      <div class="question-block">
+        <div class="question-text">Q2. Which Kali tool is commonly used for HTTP brute force?</div>
+        <input type="text" id="l2q2" placeholder="Your answer..."/>
+        <button class="btn" onclick="checkQ('l2q2',['hydra','burp suite','burpsuite','wfuzz'],'r2q2')">CHECK</button>
+        <div class="question-result" id="r2q2"></div>
+      </div>
+
+      <div class="question-block">
+        <div class="question-text">Q3. What security feature locks account after N failed logins?</div>
+        <input type="text" id="l2q3" placeholder="Your answer..."/>
+        <button class="btn" onclick="checkQ('l2q3',['account lockout','lockout','rate limit','rate limiting'],'r2q3')">CHECK</button>
+        <div class="question-result" id="r2q3"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PRACTICAL -->
+  <div>
+    <div class="panel">
+      <div class="panel-title">▶ PRACTICAL — BRUTE FORCE LOGIN</div>
+
+      <div style="font-size:0.8rem;color:#00ff8877;line-height:1.8;margin-bottom:16px">
+        Target: <code style="color:var(--green)">admin</code> account<br>
+        Hint: Password is in <code style="color:var(--yellow)">rockyou.txt</code> top 200
+      </div>
+
+      <input type="text" id="bf-user" value="admin" placeholder="Username"/>
+      <input type="password" id="bf-pass" placeholder="Password"/>
+      <button class="btn btn-full" onclick="tryLogin()">[ TRY LOGIN ]</button>
+
+      <div class="res-box" id="res2"></div>
+      <div class="flag-box" id="flag2"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">▶ AUTO BRUTE FORCE SIMULATOR</div>
+      <div style="font-size:0.8rem;color:#00ff8877;margin-bottom:12px">
+        Simulate trying passwords from a wordlist:
+      </div>
+      <textarea id="wordlist" rows="6" placeholder="Enter passwords one per line:
+password
+123456
+password123
+letmein
+admin
+welcome"></textarea>
+      <button class="btn btn-full" onclick="startBrute()">[ START BRUTE FORCE ]</button>
+      <div id="brute-log" style="margin-top:12px;font-size:0.78rem;max-height:160px;overflow-y:auto;display:none"></div>
+      <div class="flag-box" id="flag2b"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">▶ REAL TOOL COMMAND</div>
+      <div class="theory">
+        <pre>hydra -l admin -P /usr/share/wordlists/rockyou.txt \
+  127.0.0.1 http-post-form \
+  "/bruteforce/login:username=^USER^&password=^PASS^:Invalid"</pre>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+async function tryLogin() {
+  const u = document.getElementById('bf-user').value;
+  const p = document.getElementById('bf-pass').value;
+  const r = await fetch('/bruteforce/login',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({username:u,password:p})
+  });
+  const d = await r.json();
+  if (d.flag) {
+    showRes('res2', d.message, true);
+    const fb = document.getElementById('flag2');
+    fb.textContent='🚩 '+d.flag; fb.style.display='block';
+  } else if (d.success) {
+    showRes('res2', d.message + ' — keep trying for admin!', true);
+  } else {
+    showRes('res2', d.message, false);
+  }
+}
+
+async function startBrute() {
+  const wl = document.getElementById('wordlist').value.trim().split('\n').filter(Boolean);
+  const log = document.getElementById('brute-log');
+  log.innerHTML=''; log.style.display='block';
+  for (const pw of wl) {
+    await new Promise(r=>setTimeout(r,300));
+    const res = await fetch('/bruteforce/login',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({username:'admin',password:pw})
+    });
+    const d = await res.json();
+    const line = document.createElement('div');
+    if (d.success) {
+      line.style.color='var(--green)';
+      line.textContent=`[+] admin:${pw} → SUCCESS!`;
+      log.appendChild(line);
+      if (d.flag) {
+        const fb=document.getElementById('flag2b');
+        fb.textContent='🚩 '+d.flag; fb.style.display='block';
+      }
+      break;
+    } else {
+      line.style.color='var(--red)';
+      line.textContent=`[-] admin:${pw} → FAIL`;
+      log.appendChild(line);
+      log.scrollTop=log.scrollHeight;
+    }
+  }
+}
+
+function showRes(id,msg,ok){
+  const b=document.getElementById(id);
+  b.textContent=msg; b.className='res-box '+(ok?'res-ok':'res-err');
+  b.style.display='block';
+}
+
+function checkQ(inputId,correct,resultId){
+  const val=document.getElementById(inputId).value.trim().toLowerCase();
+  const ok=correct.some(a=>val.includes(a));
+  const el=document.getElementById(resultId);
+  el.textContent=ok?'✓ Correct!':'✗ Try again.';
+  el.style.color=ok?'var(--green)':'var(--red)';
+  el.style.display='block';
+}
+</script>
+</body>
+</html>
