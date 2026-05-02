@@ -2,7 +2,7 @@ from flask import Flask, request, render_template, redirect, url_for, session, j
 import os, hashlib, json, base64, hmac, time, re
 from werkzeug.utils import secure_filename
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='static', static_url_path='/static')
 app.secret_key = "mega-ctf-secret-2024"
 
 # ─── FLAGS ───────────────────────────────────────────────
